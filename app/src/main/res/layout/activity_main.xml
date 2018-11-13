@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/background"/>
+
+    <ImageView
+        android:id="@+id/imgUser2"
+        android:background="@drawable/effect"
+        android:layout_centerHorizontal="true"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:src="@drawable/avatar_user1"
+        android:layout_marginBottom="35dp"
+        android:layout_above="@+id/frameGvGame"/>
+    <TextView
+        android:id="@+id/txtUser2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/frameGvGame"
+        android:layout_margin="10dp"
+        android:text="..."
+        android:textColor="#000000"
+        android:textSize="18dp"/>
+
+    <FrameLayout
+        android:id="@+id/frameGvGame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:background="@drawable/board"
+        android:layout_centerInParent="true">
+
+        <GridView
+            android:id="@+id/gvGame"
+            android:layout_gravity="center"
+            android:scrollbars="none"
+            android:layout_width="320dp"
+            android:layout_height="320dp"
+            android:horizontalSpacing="0dp"
+            android:verticalSpacing="0dp"
+            android:numColumns="20"/>
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/imgUser1"
+        android:background="@drawable/effect"
+        android:layout_centerHorizontal="true"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:src="@drawable/avatar_user2"
+        android:layout_below="@+id/frameGvGame"
+        android:layout_margin="5dp"/>
+    <TextView
+        android:id="@+id/txtUser1"
+        android:textColor="#000000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/frameGvGame"
+        android:layout_marginTop="80dp"
+        android:text="..."
+        android:textSize="18dp"/>
+
+    <ImageView
+        android:id="@+id/exit"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="38dp"
+        android:src="@drawable/exit" />
+
+    <FrameLayout
+        android:id="@+id/frameForFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+
+</RelativeLayout>

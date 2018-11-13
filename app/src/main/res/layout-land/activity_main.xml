@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/background_land"/>
+
+    <ImageView
+        android:id="@+id/imgUser1"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/avatar_user1"
+        android:layout_margin="10dp"
+        android:layout_toStartOf="@+id/frameGvGame"/>
+
+    <FrameLayout
+        android:id="@+id/frameGvGame"
+        android:layout_width="340dp"
+        android:padding="5dp"
+        android:background="@drawable/border"
+        android:layout_height="340dp"
+        android:layout_centerInParent="true">
+
+        <GridView
+            android:id="@+id/gvGame"
+            android:layout_gravity="center"
+            android:scrollbars="none"
+            android:layout_width="320dp"
+            android:layout_height="320dp"
+            android:horizontalSpacing="0dp"
+            android:verticalSpacing="0dp"
+            android:numColumns="20"/>
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/imgUser2"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/avatar_user2"
+        android:layout_toEndOf="@+id/frameGvGame"
+        android:layout_margin="10dp"
+        />
+</RelativeLayout>

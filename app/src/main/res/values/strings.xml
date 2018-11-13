@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Caro Play</string>
+    <string name="title_activity_bluetooth">Kết nối Bluetooth</string>
+    <string name="action_settings">Cài đặt</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
