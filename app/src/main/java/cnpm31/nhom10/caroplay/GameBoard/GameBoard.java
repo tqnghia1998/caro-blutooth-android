@@ -28,12 +28,16 @@ public class GameBoard {
     public static char STATUS_EMPTY = 0;
     public static char STATUS_USER1 = 1;
     public static char STATUS_USER2 = 2;
+    public static char STATUS_TEMPORARY = 3;
 
-    // Các đối tượng để hiện thị Grid view
+    // Các đối tượng để hiển thị Grid view
     public GridView gvGame;
     public GameGridViewAdapter gridViewAdapter;
     public List<ItemStatus> boardGame;
-    boolean isWaiting;
+    public boolean isWaiting;
+
+    // Biến lưu vị trí ô tạm (ô vừa click một lần)
+    private int currTempPos = -1;
 
     // Các Gesture Detector xử lý zoom và move
     private ScaleGestureDetector mScaleDetector;
@@ -84,26 +88,48 @@ public class GameBoard {
             // Nếu đang chờ đối thủ đánh thì thôi
             if (isWaiting) return;
 
-            // Nếu ô click còn trống
+            // Nếu ô đó còn trống, thì gán cho nó thành ô tạm
             if (boardGame.get(position).getStatus() == STATUS_EMPTY) {
-                boardGame.get(position).setStatus(STATUS_USER1);
-                gridViewAdapter.notifyDataSetChanged();
-                isWaiting = true;
-                MainActivity.imgUser1.setBackgroundResource(0);
-                MainActivity.imgUser2.setBackgroundResource(R.drawable.effect);
 
-                // Chuyền dữ liệu
-                String message = new String("~" + position);
-                MainActivity.bluetoothSPP.send(message, true);
+                // Xóa ô tạm cũ đi
+                if (currTempPos != -1) boardGame.get(currTempPos).setStatus(STATUS_EMPTY);
+
+                // Gán ô tạm mới
+                boardGame.get(position).setStatus(STATUS_TEMPORARY);
+                currTempPos = position;
+
+                gridViewAdapter.notifyDataSetChanged();
+            }
+            else
+            // Nếu ô đó vừa click rồi, giờ click lần nữa thì chọn ô đó
+            if (boardGame.get(position).getStatus() == STATUS_TEMPORARY) {
+
+                // Đặt nước đi của mình lên bàn cờ
+                boardGame.get(position).setStatus(STATUS_USER1);
+                currTempPos = -1;
+                gridViewAdapter.notifyDataSetChanged();
+
+                // Đợi đối thủ
+                isWaiting = true;
+                MainActivity.avatarUser1.setBackgroundResource(0);
+                MainActivity.avatarUser2.setBackgroundResource(R.drawable.effect);
+
+                /* --------CHUYỂN DỮ LIỆU Ở ĐÂY -------- */
+                // Khi nhận dữ liệu, kiểm tra xem ký tự đầu và cuối có phải là "[" và "]"
+                MainActivity.connectedBluetooth.sendData(("[" + position + "]").getBytes());
 
                 // Kiểm tra mình thắng hay không
                 if (isWin(position, STATUS_USER1)) {
-
                     AlertDialog.Builder b = new AlertDialog.Builder(view.getContext());
                     b.setTitle("Chúc mừng");
                     b.setMessage("Bạn đã chiến thắng!");
                     b.show();
                 }
+            }
+            // Nếu ô đó là ô đã chọn (kể cả mình hay đối thủ), thì chỉ cần xóa ô tạm cũ
+            else {
+                boardGame.get(currTempPos == -1 ? 0 : currTempPos).setStatus(STATUS_EMPTY);
+                gridViewAdapter.notifyDataSetChanged();
             }
         });
     }
@@ -114,19 +140,23 @@ public class GameBoard {
         // Cập nhật bàn cờ
         boardGame.get(position).setStatus(STATUS_USER2);
         gridViewAdapter.notifyDataSetChanged();
+
+        // Không đợi nữa, tới lượt mình
         isWaiting = false;
-        MainActivity.imgUser2.setBackgroundResource(0);
-        MainActivity.imgUser1.setBackgroundResource(R.drawable.effect);
+        MainActivity.avatarUser2.setBackgroundResource(0);
+        MainActivity.avatarUser1.setBackgroundResource(R.drawable.effect);
 
         // Kiểm tra đối thủ thắng hay không
         if (isWin(position, STATUS_USER2)) {
-            Toast.makeText(_context, "Đối thủ đã thắng !", Toast.LENGTH_SHORT).show();
-            isWaiting = true;
 
+            // Hiển thị thông báo
             AlertDialog.Builder b = new AlertDialog.Builder(_context);
             b.setTitle("Chia buồn");
             b.setMessage("Bạn đã thua cuộc!");
             b.show();
+
+            // Không cho chơi nữa
+            isWaiting = true;
         }
     }
 

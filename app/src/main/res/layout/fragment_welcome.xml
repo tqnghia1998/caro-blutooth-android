@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/welcome_background">
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_centerInParent="true"
+        android:translationY="-128dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/logo" />
+
+    <ImageView
+        android:layout_below="@id/logo"
+        android:layout_centerInParent="true"
+        android:translationY="-50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/username" />
+
+    <EditText
+        android:id="@+id/usernameOutput"
+        android:enabled="false"
+        android:layout_below="@id/logo"
+        android:layout_centerInParent="true"
+        android:translationY="-25dp"
+        android:singleLine="true"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"/>
+
+    <ToggleButton
+        android:id="@+id/btnFindRoom"
+        android:layout_centerInParent="true"
+        android:translationY="50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOff="Tìm phòng"
+        android:textOn="Thoát"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:background="@drawable/button_style"
+        android:textAllCaps="false"
+        android:layout_below="@id/logo"/>
+
+    <Button
+        android:id="@+id/btnCreateRoom"
+        android:layout_centerInParent="true"
+        android:translationY="102dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tạo phòng"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:background="@drawable/button_style"
+        android:textAllCaps="false"
+        android:layout_below="@id/logo"/>
+
+    <FrameLayout
+        android:id="@+id/frameListroom"
+        android:layout_centerInParent="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="25dp"
+        android:layout_marginRight="25dp"
+        android:layout_above="@id/btnFindRoom"
+        android:translationY="50dp"/>
+
+</RelativeLayout>

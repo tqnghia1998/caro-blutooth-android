@@ -19,6 +19,7 @@ public class ItemStatus {
             case 0: image = R.drawable.status_empty; break;
             case 1: image = R.drawable.status_user1; break;
             case 2: image = R.drawable.status_user2; break;
+            case 3: image = R.drawable.status_temporary; break;
         }
     }
 

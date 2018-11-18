@@ -3,14 +3,18 @@ package cnpm31.nhom10.caroplay;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -20,202 +24,210 @@ import android.widget.Toast;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import app.akexorcist.bluetotohspp.library.BluetoothSPP;
 import app.akexorcist.bluetotohspp.library.BluetoothState;
 import app.akexorcist.bluetotohspp.library.DeviceList;
+import cnpm31.nhom10.caroplay.Bluetooth.ClientBluetooth;
+import cnpm31.nhom10.caroplay.Bluetooth.ConnectedBluetooth;
+import cnpm31.nhom10.caroplay.Bluetooth.ServerBluetooth;
 import cnpm31.nhom10.caroplay.GameBoard.GameBoard;
+import cnpm31.nhom10.caroplay.GameBoard.UserProfile;
 
 public class MainActivity extends Activity {
 
-    // Các biến toàn cục dùng trong các fragment
-    public static String userName = "anonymous";
+    // region CÁC KHAI BÁO LIÊN QUAN ĐẾN BLUETOOTH
+    public static String TAG = "CaroPlay_DEBUG";            /* Hỗ trợ Debug */
+    public static Context mainContext;                      /* Context của UI */
+    public static String oldBluetoothName;                  /* Tên cũ của Bluetooth, dùng để khôi phục */
+    public static UUID defaultUUID;                         /* Mã UUID mặc định của Bluetooth */
+    public static BluetoothAdapter bluetoothAdapter;        /* BluetoothAdapter mặc định */
+    public static ServerBluetooth serverBluetooth;          /* Tiểu trình đóng vai trò làm server */
+    public static ConnectedBluetooth connectedBluetooth;    /* Tiểu trình quản lý kết nối */
+    @SuppressLint("HandlerLeak")
+    public static android.os.Handler connectionHandler      /** QUẢN LÝ THÔNG ĐIỆP GỬI NHẬN TẠI ĐÂY **/
+            = new android.os.Handler() {
+        @Override
+        public void handleMessage(Message msg) {
 
-    GameBoard gameBoard;
-    public static ImageView imgUser1;
-    public static ImageView imgUser2;
-    ImageView imgExit;
-    TextView txtUser1;
-    TextView txtUser2;
-    LoginFragment loginFragment;
-    public static BluetoothSPP bluetoothSPP;
+            // Trích chuỗi thông điệp (nhị phân) nhận được
+            byte[] data = new byte[msg.arg1];
+            for (int i = 0; i < msg.arg1; i++) data[i] = ((byte[]) msg.obj)[i];
+            String message = new String(data);
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        char[] statusList = new char[gameBoard.boardGame.size()];
-        for (int i = 0; i < gameBoard.boardGame.size(); i++) {
-            statusList[i] = gameBoard.boardGame.get(i).getStatus();
+            // region Thông điệp liên quan đến kết nối thành công/thất bại
+            /* Nếu mình đang là server, và nhận được confirm từ client */
+            if (message.equals(mainContext.getString(R.string.CLIENTCONFIRM))) {
+
+                // Thông báo bắt đầu chơi
+                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                b.setTitle("Thông báo");
+                b.setMessage("Đối thủ đã vào phòng\nBạn là người đi trước");
+                b.setNegativeButton("Ok", (dialog, which) -> {
+                    dialog.cancel();
+                });
+                b.show();
+                // Mình có thể đi nước đầu tiên
+                isPlaying = true;
+                gameBoard.isWaiting = false;
+                avatarUser2.setBackgroundResource(0);
+            }
+            /* Nếu mình đang là client, và nhận được confirm từ server */
+            else if (message.equals(mainContext.getString(R.string.SERVERCONFIRM))) {
+
+                // Thông báo bắt đầu chơi
+                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                b.setTitle("Thông báo");
+                b.setMessage("Bạn đã vào phòng\nChủ phòng là người đi trước");
+                b.setNegativeButton("Ok", (dialog, which) -> {
+                    dialog.cancel();
+                });
+                b.show();
+
+                // Tắt giao diện Welcome
+                isPlaying = true;
+                fragmentManager.beginTransaction()
+                        .remove(welcomeFragment)
+                        .commit();
+                avatarUser1.setBackgroundResource(0);
+            }
+            // Nếu nhận được tin CONNECT FAILED, thì đó chính là
+            // mình tự gửi cho mình khi kết nối thất bại/mất kết nối
+            else if (message.equals("C@O@N@N@E@C@T@ @F@A@I@L@E@D@")) {
+                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                b.setTitle("Thông báo");
+                b.setMessage("Không thể kết nối");
+                b.show();
+            }
+            // endregion
+
+            // region Thông điệp tọa độ nước đi của đối thủ
+            /* Nếu ký tự đầu là "[" và ký tự cuối là "]" */
+            else if (message.charAt(0) =='[' && message.charAt(message.length() - 1) ==']') {
+
+                // Lấy tọa độ
+                int position = Integer.parseInt(message.substring(1, message.length() - 1));
+
+                // Đặt nước đi lên bàn cờ
+                gameBoard.rivalMove(position);
+            }
+            // endregion
+
+            // region Thông điệp thoát khỏi phòng
+            /* Trường hợp đối thủ thoát, nhận được chuỗi E@X@I@T@E@D@ */
+            else if (message.equals("S@U@R@R@E@N@D@E@R@")) {
+                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                b.setTitle("Chúc mừng");
+                b.setMessage("Đối thủ đã thoát!");
+                b.show();
+                isPlaying = false;
+                /* Tắt luôn kết nối */
+                MainActivity.connectedBluetooth.cancel();
+            }
+            // endregion
         }
-        outState.putCharArray("status", statusList);
-    }
+    };
+    // endregion
 
-    @SuppressLint("ClickableViewAccessibility")
+    // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN CHƠI CỜ
+    public static GameBoard gameBoard;
+    public static ImageView imgExit;
+    public static boolean isPlaying;
+
+    public static UserProfile user1;
+    public static TextView nameUser1;
+    public static ImageView avatarUser1;
+
+    public static UserProfile user2;
+    public static TextView nameUser2;
+    public static ImageView avatarUser2;
+    // endregion
+
+    // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN KHÁC
+    public static WelcomeFragment welcomeFragment;
+    public static FragmentManager fragmentManager;
+    // endregion
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mainContext = getApplicationContext();
 
-        // Tạo một fragment đăng nhập
-        loginFragment = new LoginFragment();
+        /* Xử lý các biến Bluetooth */
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        defaultUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+        oldBluetoothName = BluetoothAdapter.getDefaultAdapter().getName();
 
-        // Tạo một game board
-        gameBoard = new GameBoard(this, false);
-
-        // Lấy dữ liệu đã lưu nếu có
-        if (savedInstanceState != null) {
-            char[] statusList = savedInstanceState.getCharArray("status");
-            for (int i = 0; i < statusList.length; i++) {
-                gameBoard.boardGame.get(i).setStatus(statusList[i]);
-            }
+        /* Nếu điện thoại không hỗ trợ Bluetooth thì thông báo */
+        if (bluetoothAdapter == null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Thông báo")
+                    .setMessage("Điện thoại của bạn không hỗ trợ Bluetooth")
+                    .setPositiveButton("Exit", (dialog, which) -> System.exit(0))
+                    .show();
         }
 
-        bluetoothSPP = new BluetoothSPP(this);
+        /* Nếu chưa bật Bluetooth trong điện thoại */
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBT, 1);
+        }
 
-        // Xử lý sự kiện nhận dữ liệu từ các thiết bị đã kết nối
-        bluetoothSPP.setOnDataReceivedListener((data, message) -> {
+        /* Khởi tạo giao diện Welcome */
+        welcomeFragment = new WelcomeFragment();
+        fragmentManager = getFragmentManager();
 
-            // Nếu nhận tên của đối thủ
-            if (message.charAt(0) == '@') {
-                txtUser1.setText(userName);
-                txtUser2.setText(message.substring(1));
-            }
-            // Nếu là nhận nước đi
-            if (message.charAt(0) == '~') {
-                int position = Integer.parseInt(message.substring(1));
-                gameBoard.rivalMove(position);
-            }
-        });
+        /* Hiển thị giao diện Welcome */
+        fragmentManager.beginTransaction()
+                .replace(R.id.frameWelcome, welcomeFragment)
+                .commit();
 
-        // Xử lý sự kiện khi kết nối thành công
-        bluetoothSPP.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() {
-            public void onDeviceConnected(String name, String address) {
-                // Thoát giao diện đăng nhập
-                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                fragmentTransaction.remove(loginFragment);
-                fragmentTransaction.commit();
+        /* Khởi tạo GameBoard */
+        gameBoard = new GameBoard(this, true);
+        isPlaying = false;
 
-                // Gửi tên qua
-                bluetoothSPP.send("@" + userName, true);
-            }
-
-            public void onDeviceDisconnected() {
-                // Toast.makeText(getApplicationContext()
-                //        , "Kết nối đã bị mất", Toast.LENGTH_SHORT).show();
-                showLogin();
-            }
-
-            public void onDeviceConnectionFailed() {
-                // Toast.makeText(getApplicationContext()
-                //         , "Không thể tạo kết nối", Toast.LENGTH_SHORT).show();
-                showLogin();
-            }
-        });
-
-        // Hiển thị giao diện đăng nhập
-        showLogin();
-
+        /* Ánh xạ giao diện */
+        avatarUser1 = findViewById(R.id.avatarUser1);
+        avatarUser2 = findViewById(R.id.avatarUser2);
+        nameUser1 = findViewById(R.id.nameUser1);
+        nameUser2 = findViewById(R.id.nameUser2);
         imgExit = findViewById(R.id.exit);
+
+        /* Sự kiện thoát khỏi phòng */
         imgExit.setOnClickListener(v -> {
 
-            AlertDialog.Builder b = new AlertDialog.Builder(this);
+            AlertDialog.Builder b = new AlertDialog.Builder(v.getContext());
             b.setTitle("Xác nhận");
-            b.setMessage("Hủy kết nối hiện tại?");
+            b.setMessage("Bạn có muốn thoát?");
 
             // Nếu cancel
-            b.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    dialog.cancel();
-                }
-            });
+            b.setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
 
             // Nếu OK - đồng ý đăng ký
-            b.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    showLogin();
+            b.setPositiveButton("Ok", (dialog, id) -> {
+
+                /* Hiển thị lại giao diện Welcome */
+                fragmentManager.beginTransaction()
+                        .replace(R.id.frameWelcome, welcomeFragment)
+                        .commit();
+
+                /* Reset bàn cờ và cập nhật số trận đánh */
+                gameBoard.reSet();
+
+                /* Nếu đang chơi, thì gửi thông điệp đầu hàng */
+                if (isPlaying) {
+                    MainActivity.connectedBluetooth.sendData("S@U@R@R@E@N@D@E@R@".getBytes());
+                    /* Tắt luôn kết nối */
+                    MainActivity.connectedBluetooth.cancel();
                 }
             });
-
             b.show();
         });
-
-        imgUser1 = findViewById(R.id.imgUser1);
-        imgUser2 = findViewById(R.id.imgUser2);
-        txtUser1 = findViewById(R.id.txtUser1);
-        txtUser2 = findViewById(R.id.txtUser2);
     }
 
-    // Khi ứng dụng bắt đầu, kiểm tra trạng thái của bluetooth
-    public void onStart() {
-        super.onStart();
-
-        // Kiểm tra điện thoại có bật blutooth hay chưa
-        if (!bluetoothSPP.isBluetoothEnabled()) {
-            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(intent, BluetoothState.REQUEST_ENABLE_BT);
-        } else {
-            // Kiểm tra dịch vụ BluetoothSPP có được bật hay chưa
-            if(!bluetoothSPP.isServiceAvailable()) {
-                bluetoothSPP.setupService();
-                bluetoothSPP.startService(BluetoothState.DEVICE_ANDROID);
-            }
-        }
-    }
-
-    // Dừng dịch vụ BluetoothSPP khi ứng dụng kết thúc
-    public void onDestroy() {
-        super.onDestroy();
-        bluetoothSPP.stopService();
-    }
-
-    // Phương thức hiển thị màn hình chờ
-    public void showLogin() {
-        gameBoard.reSet();
-        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.frameForFragment, loginFragment);
-        fragmentTransaction.addToBackStack("login");
-        fragmentTransaction.commit();
-        bluetoothSPP.disconnect();
-    }
-
-    // Phương thức hiển thị kết nối với các thiết bị
-    public static void findRival(Activity activity) {
-        Intent intent = new Intent(activity, DeviceList.class);
-        intent.putExtra("layout_list", R.layout.bluetooth_layout);
-        intent.putExtra("no_devices_found", "Không có thiết bị nào");
-        intent.putExtra("scan_for_devices", "Tìm kiếm");
-        activity.startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
-    }
-
-    // Xử lý sự kiện sau khi đã chọn thiết bị để kết nối
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        // Nếu yêu cầu muốn kết nối tới thiết bị đã chọn
-        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
-            // Và bluetooth trong máy đã được bật
-            if (resultCode == Activity.RESULT_OK)
-                // Thì tiến hành tạo kết nối
-                bluetoothSPP.connect(data);
-        }
-        // Nếu yêu cầu muốn bật BluetoothSPP
-        else {
-            if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
-                // Và bluetooth trong máy đã được bật
-                if (resultCode == Activity.RESULT_OK) {
-                    // Thì bật dịch vụ BluetoothSPP
-                    bluetoothSPP.setupService();
-                    bluetoothSPP.startService(BluetoothState.DEVICE_ANDROID);
-                }
-                else {
-                    Toast.makeText(this
-                            , "Bluetooth chưa được bật"
-                            , Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-    }
-
-    // region Full Screen
+    // region FULL SCREEN
     // Source: https://developer.android.com/training/system-ui/immersive
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -223,11 +235,6 @@ public class MainActivity extends Activity {
         if (hasFocus) {
             hideSystemUI();
         }
-    }
-
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
     }
 
     private void hideSystemUI() {

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/tooltip"
+    android:id="@+id/layoutBluetooth">
+
+    <ToggleButton
+        android:id="@+id/btnScan"
+        android:textOn="Dừng"
+        android:textOff="Tìm"
+        android:background="@drawable/button_style"
+        android:textColor="#FFFFFF"
+        android:layout_width="80dp"
+        android:layout_height="30dp"
+        android:textAllCaps="false"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="50dp"/>
+
+    <ListView
+        android:id="@+id/listViewRoom"
+        android:listSelector="@drawable/selected_item_style"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginBottom="100dp"/>
+
+</LinearLayout>
