@@ -15,21 +15,45 @@
     <ImageView
         android:id="@+id/avatarUser2"
         android:background="@drawable/effect"
-        android:layout_centerHorizontal="true"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:scaleType="centerCrop"
+        android:padding="10dp"
         android:src="@drawable/avatar_user1"
-        android:layout_marginBottom="35dp"
         android:layout_above="@+id/frameGvGame"/>
     <TextView
         android:id="@+id/nameUser2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_above="@+id/frameGvGame"
-        android:layout_margin="10dp"
-        android:textColor="#000000"
-        android:textSize="18sp"/>
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        android:layout_above="@id/frameGvGame"
+        android:layout_marginBottom="48dp"
+        android:layout_toEndOf="@id/avatarUser2"/>
+    <TextView
+        android:id="@+id/nameUser1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        android:layout_below="@id/frameGvGame"
+        android:layout_marginTop="48dp"
+        android:layout_toEndOf="@id/avatarUser1"/>
+
+    <ImageView
+        android:id="@+id/imgSticker"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:padding="5dp"
+        android:layout_above="@+id/frameGvGame"/>
+
+    <FrameLayout
+        android:id="@+id/tooltipReceive"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/avatarUser2"
+        android:layout_above="@id/frameGvGame"
+        android:layout_marginBottom="25dp"/>
 
     <FrameLayout
         android:id="@+id/frameGvGame"
@@ -51,22 +75,13 @@
 
     <ImageView
         android:id="@+id/avatarUser1"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:scaleType="centerCrop"
+        android:padding="10dp"
         android:background="@drawable/effect"
-        android:layout_centerHorizontal="true"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
         android:src="@drawable/avatar_user2"
-        android:layout_below="@+id/frameGvGame"
-        android:layout_margin="5dp"/>
-    <TextView
-        android:id="@+id/nameUser1"
-        android:textColor="#000000"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/frameGvGame"
-        android:layout_marginTop="80dp"
-        android:textSize="18sp"/>
+        android:layout_below="@+id/frameGvGame"/>
 
     <ImageView
         android:id="@+id/exit"
@@ -76,7 +91,13 @@
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="38dp"
-        android:src="@drawable/exit" />
+        android:src="@drawable/exit"/>
+
+    <FrameLayout
+        android:id="@+id/tooltipChat"
+        android:layout_width="400dp"
+        android:layout_height="400dp"
+        android:layout_above="@id/exit"/>
 
     <FrameLayout
         android:id="@+id/frameWelcome"

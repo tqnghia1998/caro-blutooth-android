@@ -4,36 +4,35 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import org.w3c.dom.Text;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.UUID;
 
-import app.akexorcist.bluetotohspp.library.BluetoothSPP;
-import app.akexorcist.bluetotohspp.library.BluetoothState;
-import app.akexorcist.bluetotohspp.library.DeviceList;
-import cnpm31.nhom10.caroplay.Bluetooth.ClientBluetooth;
 import cnpm31.nhom10.caroplay.Bluetooth.ConnectedBluetooth;
 import cnpm31.nhom10.caroplay.Bluetooth.ServerBluetooth;
 import cnpm31.nhom10.caroplay.GameBoard.GameBoard;
-import cnpm31.nhom10.caroplay.GameBoard.UserProfile;
+import cnpm31.nhom10.caroplay.GameBoard.SingletonSharePrefs;
+
+import static cnpm31.nhom10.caroplay.EditProfileFragment.getCircledBitmap;
 
 public class MainActivity extends Activity {
 
@@ -54,7 +53,35 @@ public class MainActivity extends Activity {
             // Trích chuỗi thông điệp (nhị phân) nhận được
             byte[] data = new byte[msg.arg1];
             for (int i = 0; i < msg.arg1; i++) data[i] = ((byte[]) msg.obj)[i];
+
+            // region Thông điệp gửi ảnh avatar
+            if (msg.arg1 > 1024) {
+                Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, msg.arg1);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    avatarUser2.setImageBitmap(getCircledBitmap(bmp));
+                }
+                return;
+            }
+            // endregion
+
             String message = new String(data);
+
+            // region Thông điệp gửi tên và giới tính
+            if (message.length() > 8 && message.substring(0, 8).equals("N@A@M@E@")) {
+                nameUser2.setText(message.substring(8));
+                // Gửi avatar cho đối phương
+                Bitmap bitmap = ((BitmapDrawable)avatarUser1.getDrawable()).getBitmap();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100, stream);
+                byte [] dataBitmap = stream.toByteArray();
+                new CountDownTimer(250, 250) {
+                    public void onTick(long millisUntilFinished) {}
+                    public void onFinish() {
+                        connectedBluetooth.sendData(dataBitmap);
+                    }
+                }.start();
+            }
+            // endregion
 
             // region Thông điệp liên quan đến kết nối thành công/thất bại
             /* Nếu mình đang là server, và nhận được confirm từ client */
@@ -62,24 +89,27 @@ public class MainActivity extends Activity {
 
                 // Thông báo bắt đầu chơi
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Thông báo");
-                b.setMessage("Đối thủ đã vào phòng\nBạn là người đi trước");
+                b.setTitle("Đối thủ đã vào phòng!");
+                b.setMessage("Bạn là người chơi trước.");
                 b.setNegativeButton("Ok", (dialog, which) -> {
                     dialog.cancel();
                 });
                 b.show();
+
                 // Mình có thể đi nước đầu tiên
                 isPlaying = true;
                 gameBoard.isWaiting = false;
                 avatarUser2.setBackgroundResource(0);
+                // Gửi tên cho đối phương
+                connectedBluetooth.sendData(("N@A@M@E@" + nameUser1.getText().toString()).getBytes());
             }
             /* Nếu mình đang là client, và nhận được confirm từ server */
             else if (message.equals(mainContext.getString(R.string.SERVERCONFIRM))) {
 
                 // Thông báo bắt đầu chơi
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Thông báo");
-                b.setMessage("Bạn đã vào phòng\nChủ phòng là người đi trước");
+                b.setTitle("Bạn đã vào phòng!");
+                b.setMessage("Chủ phòng là người chơi trước.");
                 b.setNegativeButton("Ok", (dialog, which) -> {
                     dialog.cancel();
                 });
@@ -87,17 +117,17 @@ public class MainActivity extends Activity {
 
                 // Tắt giao diện Welcome
                 isPlaying = true;
-                fragmentManager.beginTransaction()
-                        .remove(welcomeFragment)
-                        .commit();
+                fragmentManager.beginTransaction().remove(welcomeFragment).commit();
                 avatarUser1.setBackgroundResource(0);
+                // Gửi tên cho đối phương
+                connectedBluetooth.sendData(("N@A@M@E@" + nameUser1.getText().toString()).getBytes());
             }
             // Nếu nhận được tin CONNECT FAILED, thì đó chính là
             // mình tự gửi cho mình khi kết nối thất bại/mất kết nối
             else if (message.equals("C@O@N@N@E@C@T@ @F@A@I@L@E@D@")) {
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Thông báo");
-                b.setMessage("Không thể kết nối");
+                b.setTitle("Không thể kết nối!");
+                b.setMessage("Vui lòng thử lại.");
                 b.show();
             }
             // endregion
@@ -117,13 +147,63 @@ public class MainActivity extends Activity {
             // region Thông điệp thoát khỏi phòng
             /* Trường hợp đối thủ thoát, nhận được chuỗi E@X@I@T@E@D@ */
             else if (message.equals("S@U@R@R@E@N@D@E@R@")) {
+                if (!isPlaying) return;
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Chúc mừng");
-                b.setMessage("Đối thủ đã thoát!");
+                b.setTitle("Đối thủ đã thoát!");
+                b.setMessage("Nhấn OK để chờ đối thủ mới.\nNhấn Cancel để xem lại trận đánh.");
+                b.setNegativeButton("Cancel", (dialog, which) -> {
+                    dialog.cancel();
+                });
+                b.setPositiveButton("Ok", (dialog, which) -> {
+                    gameBoard.reSet();
+                    serverBluetooth = new ServerBluetooth();
+                    serverBluetooth.start();
+                });
                 b.show();
-                isPlaying = false;
                 /* Tắt luôn kết nối */
                 MainActivity.connectedBluetooth.cancel();
+                isPlaying = false;
+                avatarUser2.setImageResource(R.drawable.avatar_user1);
+                avatarUser2.setBackgroundResource(0);
+                avatarUser1.setBackgroundResource(R.drawable.effect);
+                nameUser2.setText("");
+            }
+            // endregion
+
+            // region Thông điệp chat/tin nhắn thoại
+            if (message.length() > 8 && message.substring(0, 8).equals("T@E@X@T@")) {
+                ReceiveFragment receiveFragment = new ReceiveFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("text", message.substring(8));
+                receiveFragment.setArguments(bundle);
+
+                // Tự động ẩn trong 3s
+                new CountDownTimer(3000, 1000) {
+                    public void onTick(long millisUntilFinished) {
+                        fragmentManager.beginTransaction().replace(R.id.tooltipReceive, receiveFragment).commit();
+                    }
+                    public void onFinish() {
+                        fragmentManager.beginTransaction().remove(receiveFragment).commit();
+                    }
+                }.start();
+            }
+            if (message.length() > 14 && message.substring(0, 14).equals("S@T@I@C@K@E@R@")) {
+                String sticker = message.substring(14);
+
+                // Tự động ẩn trong 3s
+                new CountDownTimer(3000, 1000) {
+                    public void onTick(long millisUntilFinished) {
+                        if (sticker.equals("A@F@T@E@R@B@O@O@M@")) imgSticker.setBackgroundResource(R.drawable.after_boom_sticker);
+                        if (sticker.equals("B@E@A@T@B@R@I@C@K@")) imgSticker.setBackgroundResource(R.drawable.beat_brick_sticker);
+                        if (sticker.equals("B@I@G@S@M@I@L@E@")) imgSticker.setBackgroundResource(R.drawable.big_smile_sticker);
+                        if (sticker.equals("B@O@S@S@")) imgSticker.setBackgroundResource(R.drawable.boss_sticker);
+                        if (sticker.equals("D@R@I@B@B@L@E@")) imgSticker.setBackgroundResource(R.drawable.dribble_sticker);
+                        if (sticker.equals("H@E@L@L@B@O@Y@")) imgSticker.setBackgroundResource(R.drawable.hell_boy_sticker);
+                    }
+                    public void onFinish() {
+                        imgSticker.setBackgroundResource(0);
+                    }
+                }.start();
             }
             // endregion
         }
@@ -134,13 +214,11 @@ public class MainActivity extends Activity {
     public static GameBoard gameBoard;
     public static ImageView imgExit;
     public static boolean isPlaying;
-
-    public static UserProfile user1;
     public static TextView nameUser1;
+    public static TextView nameUser2;
     public static ImageView avatarUser1;
 
-    public static UserProfile user2;
-    public static TextView nameUser2;
+    public static ImageView imgSticker;
     public static ImageView avatarUser2;
     // endregion
 
@@ -175,6 +253,10 @@ public class MainActivity extends Activity {
             startActivityForResult(enableBT, 1);
         }
 
+        /* Khởi tạo GameBoard */
+        gameBoard = new GameBoard(this, true);
+        isPlaying = false;
+
         /* Khởi tạo giao diện Welcome */
         welcomeFragment = new WelcomeFragment();
         fragmentManager = getFragmentManager();
@@ -184,16 +266,29 @@ public class MainActivity extends Activity {
                 .replace(R.id.frameWelcome, welcomeFragment)
                 .commit();
 
-        /* Khởi tạo GameBoard */
-        gameBoard = new GameBoard(this, true);
-        isPlaying = false;
-
         /* Ánh xạ giao diện */
         avatarUser1 = findViewById(R.id.avatarUser1);
         avatarUser2 = findViewById(R.id.avatarUser2);
+        imgSticker = findViewById(R.id.imgSticker);
         nameUser1 = findViewById(R.id.nameUser1);
         nameUser2 = findViewById(R.id.nameUser2);
         imgExit = findViewById(R.id.exit);
+
+        /* Cập nhật ảnh đại diện và tên */
+        nameUser1.setText(SingletonSharePrefs.getInstance().get("name", String.class));
+        String savedDirectory = SingletonSharePrefs.getInstance().get("caroPlayPath", String.class);
+        if (!savedDirectory.equals("")){
+            File savedAvatar =  new File(savedDirectory, "avatar.jpg");
+            try {
+                Bitmap savedBitmap = BitmapFactory.decodeStream(new FileInputStream(savedAvatar));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    savedBitmap = getCircledBitmap(savedBitmap);
+                }
+                avatarUser1.setImageBitmap(savedBitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
 
         /* Sự kiện thoát khỏi phòng */
         imgExit.setOnClickListener(v -> {
@@ -221,9 +316,20 @@ public class MainActivity extends Activity {
                     MainActivity.connectedBluetooth.sendData("S@U@R@R@E@N@D@E@R@".getBytes());
                     /* Tắt luôn kết nối */
                     MainActivity.connectedBluetooth.cancel();
+                    isPlaying = false;
                 }
             });
             b.show();
+        });
+
+        /* Sự kiện nhắn tin */
+        ChatFragment chatFragment = new ChatFragment();
+        avatarUser1.setOnClickListener(v -> {
+            if (getFragmentManager().beginTransaction().isEmpty()){
+                fragmentManager.beginTransaction()
+                        .replace(R.id.tooltipChat, chatFragment)
+                        .commit();
+            }
         });
     }
 
@@ -262,6 +368,11 @@ public class MainActivity extends Activity {
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
     }
     // endregion
 }

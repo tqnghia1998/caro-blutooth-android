@@ -96,7 +96,7 @@ public class ListroomFragment extends android.app.Fragment {
 
             /* Nếu button đang ấn thì xóa và cập nhật lại */
             if (isChecked) {
-                listRoom.clear();
+                listRoomAdapter.clear();
                 getActivity().registerReceiver(bReciever, filter);
                 bluetoothAdapter.startDiscovery();
             }
@@ -108,6 +108,9 @@ public class ListroomFragment extends android.app.Fragment {
 
         /* Sự kiện chọn phòng */
         listViewRoom.setOnItemClickListener((parent, view1, position, id) -> {
+
+            /* Tắt tìm */
+            btnScan.setChecked(false);
 
             /* Lấy BluetoothDevice tương ứng ra*/
             BluetoothDevice device = listDevices.get(listRoom.get(position));

@@ -7,10 +7,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 import cnpm31.nhom10.caroplay.MainActivity;
-
-import static cnpm31.nhom10.caroplay.MainActivity.connectionHandler;
 
 public class ConnectedBluetooth extends Thread {
 
@@ -53,6 +52,9 @@ public class ConnectedBluetooth extends Thread {
 
         /* Số lượng byte đọc được */
         int numBytes;
+        ArrayList<Byte> imageByte = new ArrayList<>();
+        boolean isImg = false;
+        int numBytesNew = 0;
 
         /* Liên tục đọc từ input stream cho đến khi exception (mất kết nối) */
         while (true) {
@@ -60,18 +62,48 @@ public class ConnectedBluetooth extends Thread {
                 /* Đọc vào buffer với số byte đọc được là numBytes */
                 numBytes = mmInStream.read(mmBuffer);
 
-                /* Gửi dữ liệu đọc được sang MainActivity */
-                Message readMsg = MainActivity.connectionHandler
-                        .obtainMessage(1, numBytes, -1, mmBuffer);
+                if (numBytes == 512) {
+                    isImg = true;
+                    for (int i = 0; i< numBytes; i++) {
+                        imageByte.add(mmBuffer[i]);
+                    }
+                    while (true) {
+                        numBytes = mmInStream.read(mmBuffer);
+                        for (int i = 0; i< numBytes; i++) {
+                            imageByte.add(mmBuffer[i]);
+                        }
+                        if (numBytes < 512) break;
+                    }
+                }
 
-                /* Gửi đi đến MessageQueue */
-                readMsg.sendToTarget();
+                if (isImg) {
+                    int x = imageByte.size();
+                    byte[] d = new byte[x];
+                    for (int i = 0; i < x; i++) {
+                        d[i] = imageByte.get(i).byteValue();
+                    }
+                    MainActivity.connectionHandler
+                            .obtainMessage(1, x, -1, d).sendToTarget();
+                    isImg = false;
+                }
+                else {
+                    /* Gửi dữ liệu đọc được sang MainActivity */
+                    Message readMsg = MainActivity.connectionHandler
+                            .obtainMessage(1, numBytes, -1, mmBuffer);
+
+                    /* Gửi đi đến MessageQueue */
+                    readMsg.sendToTarget();
+                }
 
             } catch (IOException e) {
                 Log.d(MainActivity.TAG, "Input stream bị mất kết nối.", e);
                 break;
             }
         }
+
+        /* Nếu bị mất kết nối */
+        MainActivity.connectionHandler
+                .obtainMessage(1, 18, -1, "S@U@R@R@E@N@D@E@R@".getBytes()).sendToTarget();
     }
 
     /* Gửi dữ liệu sang đối phương kết nối */

@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/welcome_background">
+    android:background="@drawable/background_welcome">
 
     <ImageView
         android:id="@+id/logo"
@@ -22,13 +22,16 @@
         android:src="@drawable/username" />
 
     <EditText
-        android:id="@+id/usernameOutput"
+        android:id="@+id/username"
         android:enabled="false"
+        android:textColor="#d13232"
+        android:textSize="25sp"
         android:layout_below="@id/logo"
         android:layout_centerInParent="true"
         android:translationY="-25dp"
+        android:textStyle="bold"
         android:singleLine="true"
-        android:layout_width="250dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAlignment="center"/>
 
@@ -41,7 +44,7 @@
         android:textOff="Tìm phòng"
         android:textOn="Thoát"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:background="@drawable/button_style"
         android:textAllCaps="false"
         android:layout_below="@id/logo"/>
@@ -54,7 +57,19 @@
         android:layout_height="wrap_content"
         android:text="Tạo phòng"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="20sp"
+        android:background="@drawable/button_style"
+        android:textAllCaps="false"
+        android:layout_below="@id/logo"/>
+    <Button
+        android:id="@+id/btnEditProfile"
+        android:layout_centerInParent="true"
+        android:translationY="154dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tùy chỉnh"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
         android:background="@drawable/button_style"
         android:textAllCaps="false"
         android:layout_below="@id/logo"/>
