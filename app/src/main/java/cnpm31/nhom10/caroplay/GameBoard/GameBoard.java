@@ -208,7 +208,7 @@ public class GameBoard {
     public void reSet() {
         for (int i = 0; i < 400; i++) boardGame.get(i).setStatus(STATUS_EMPTY);
         gridViewAdapter.notifyDataSetChanged();
-        isWaiting = false;
+        isWaiting = true;
     }
 
 }

@@ -48,22 +48,20 @@ public class ConnectedBluetooth extends Thread {
     public void run() {
 
         /* Cấp phát cho buffer */
-        mmBuffer = new byte[512];
+        mmBuffer = new byte[256];
 
         /* Số lượng byte đọc được */
         int numBytes;
         ArrayList<Byte> imageByte = new ArrayList<>();
         boolean isImg = false;
-        int numBytesNew = 0;
 
         /* Liên tục đọc từ input stream cho đến khi exception (mất kết nối) */
         while (true) {
             try {
                 /* Đọc vào buffer với số byte đọc được là numBytes */
                 numBytes = mmInStream.read(mmBuffer);
-
-                if (numBytes == 512) {
-                    isImg = true;
+/*
+                if (numBytes == 256) {
                     for (int i = 0; i< numBytes; i++) {
                         imageByte.add(mmBuffer[i]);
                     }
@@ -72,7 +70,10 @@ public class ConnectedBluetooth extends Thread {
                         for (int i = 0; i< numBytes; i++) {
                             imageByte.add(mmBuffer[i]);
                         }
-                        if (numBytes < 512) break;
+                        if (numBytes < 128) {
+                            isImg = true;
+                            break;
+                        }
                     }
                 }
 
@@ -86,14 +87,14 @@ public class ConnectedBluetooth extends Thread {
                             .obtainMessage(1, x, -1, d).sendToTarget();
                     isImg = false;
                 }
-                else {
+                else {*/
                     /* Gửi dữ liệu đọc được sang MainActivity */
                     Message readMsg = MainActivity.connectionHandler
                             .obtainMessage(1, numBytes, -1, mmBuffer);
 
                     /* Gửi đi đến MessageQueue */
                     readMsg.sendToTarget();
-                }
+                /*}*/
 
             } catch (IOException e) {
                 Log.d(MainActivity.TAG, "Input stream bị mất kết nối.", e);

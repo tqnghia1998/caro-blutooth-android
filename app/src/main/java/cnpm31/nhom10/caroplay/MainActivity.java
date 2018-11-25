@@ -19,8 +19,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,13 +53,14 @@ public class MainActivity extends Activity {
             for (int i = 0; i < msg.arg1; i++) data[i] = ((byte[]) msg.obj)[i];
 
             // region Thông điệp gửi ảnh avatar
-            if (msg.arg1 > 1024) {
+            /*if (msg.arg1 > 1024) {
                 Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, msg.arg1);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     avatarUser2.setImageBitmap(getCircledBitmap(bmp));
+                    Toast.makeText(mainContext, "" + msg.arg1, Toast.LENGTH_SHORT).show();
                 }
                 return;
-            }
+            }*/
             // endregion
 
             String message = new String(data);
@@ -69,7 +68,7 @@ public class MainActivity extends Activity {
             // region Thông điệp gửi tên và giới tính
             if (message.length() > 8 && message.substring(0, 8).equals("N@A@M@E@")) {
                 nameUser2.setText(message.substring(8));
-                // Gửi avatar cho đối phương
+                /*// Gửi avatar cho đối phương
                 Bitmap bitmap = ((BitmapDrawable)avatarUser1.getDrawable()).getBitmap();
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG,100, stream);
@@ -79,8 +78,16 @@ public class MainActivity extends Activity {
                     public void onFinish() {
                         connectedBluetooth.sendData(dataBitmap);
                     }
-                }.start();
+                }.start();*/
             }
+            /*if (message.equals("A@V@A@T@A@R@")) {
+                // Gửi avatar cho đối phương
+                Bitmap bitmap = ((BitmapDrawable)avatarUser1.getDrawable()).getBitmap();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100, stream);
+                byte [] dataBitmap = stream.toByteArray();
+                connectedBluetooth.sendData(dataBitmap);
+            }*/
             // endregion
 
             // region Thông điệp liên quan đến kết nối thành công/thất bại
@@ -117,6 +124,7 @@ public class MainActivity extends Activity {
 
                 // Tắt giao diện Welcome
                 isPlaying = true;
+                gameBoard.isWaiting = true;
                 fragmentManager.beginTransaction().remove(welcomeFragment).commit();
                 avatarUser1.setBackgroundResource(0);
                 // Gửi tên cho đối phương
@@ -163,6 +171,7 @@ public class MainActivity extends Activity {
                 /* Tắt luôn kết nối */
                 MainActivity.connectedBluetooth.cancel();
                 isPlaying = false;
+                gameBoard.isWaiting = true;
                 avatarUser2.setImageResource(R.drawable.avatar_user1);
                 avatarUser2.setBackgroundResource(0);
                 avatarUser1.setBackgroundResource(R.drawable.effect);
@@ -217,7 +226,6 @@ public class MainActivity extends Activity {
     public static TextView nameUser1;
     public static TextView nameUser2;
     public static ImageView avatarUser1;
-
     public static ImageView imgSticker;
     public static ImageView avatarUser2;
     // endregion
@@ -274,6 +282,11 @@ public class MainActivity extends Activity {
         nameUser2 = findViewById(R.id.nameUser2);
         imgExit = findViewById(R.id.exit);
 
+        /* Sự kiện reload avatar đối phương */
+        /*avatarUser2.setOnClickListener(v -> {
+            connectedBluetooth.sendData("A@V@A@T@A@R@".getBytes());
+        });*/
+
         /* Cập nhật ảnh đại diện và tên */
         nameUser1.setText(SingletonSharePrefs.getInstance().get("name", String.class));
         String savedDirectory = SingletonSharePrefs.getInstance().get("caroPlayPath", String.class);
@@ -289,7 +302,6 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
         }
-
         /* Sự kiện thoát khỏi phòng */
         imgExit.setOnClickListener(v -> {
 
@@ -331,6 +343,12 @@ public class MainActivity extends Activity {
                         .commit();
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
     }
 
     // region FULL SCREEN
