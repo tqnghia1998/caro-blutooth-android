@@ -1,5 +1,6 @@
 package cnpm31.nhom10.caroplay;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -7,14 +8,20 @@ import android.app.FragmentManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.os.Message;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +30,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.UUID;
 
 import cnpm31.nhom10.caroplay.Bluetooth.ConnectedBluetooth;
@@ -45,6 +60,8 @@ public class MainActivity extends Activity {
     @SuppressLint("HandlerLeak")
     public static android.os.Handler connectionHandler      /** QUẢN LÝ THÔNG ĐIỆP GỬI NHẬN TẠI ĐÂY **/
             = new android.os.Handler() {
+
+
         @Override
         public void handleMessage(Message msg) {
 
@@ -64,6 +81,11 @@ public class MainActivity extends Activity {
             // endregion
 
             String message = new String(data);
+
+            if (message.equals("Have new chat voice")){
+                btnPlay.setBackgroundResource(R.drawable.effect);
+                CanPlay = true;
+            }
 
             // region Thông điệp gửi tên và giới tính
             if (message.length() > 8 && message.substring(0, 8).equals("N@A@M@E@")) {
@@ -228,7 +250,13 @@ public class MainActivity extends Activity {
     public static ImageView avatarUser1;
     public static ImageView imgSticker;
     public static ImageView avatarUser2;
+    public static ImageButton btnPlay;
+
     // endregion
+
+    // Đường dẫn lưu file chat voice nhận được
+    public static final String mOutputFile = Environment.getExternalStorageDirectory().getAbsolutePath()+"/receive.3gp";
+    public static boolean CanPlay = false;
 
     // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN KHÁC
     public static WelcomeFragment welcomeFragment;
@@ -261,6 +289,8 @@ public class MainActivity extends Activity {
             startActivityForResult(enableBT, 1);
         }
 
+        CheckSomePermission();
+
         /* Khởi tạo GameBoard */
         gameBoard = new GameBoard(this, true);
         isPlaying = false;
@@ -281,6 +311,7 @@ public class MainActivity extends Activity {
         nameUser1 = findViewById(R.id.nameUser1);
         nameUser2 = findViewById(R.id.nameUser2);
         imgExit = findViewById(R.id.exit);
+        btnPlay = findViewById(R.id.btnPlay);
 
         /* Sự kiện reload avatar đối phương */
         /*avatarUser2.setOnClickListener(v -> {
@@ -343,6 +374,27 @@ public class MainActivity extends Activity {
                         .commit();
             }
         });
+
+        // Sự kiện phát tin nhắn thoại nhận được
+        btnPlay.setOnClickListener(v -> {
+
+            if(!CanPlay){
+                return;
+            }
+
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            try {
+                mediaPlayer.setDataSource(mOutputFile);
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+                Toast.makeText(getApplicationContext(), "Playing Audio", Toast.LENGTH_LONG).show();
+            } catch (Exception e) {
+                // make something
+            }
+            finally {
+                btnPlay.setBackgroundResource(0);
+            }
+        });
     }
 
     @Override
@@ -392,5 +444,71 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
+    // endregion
+
+    // region Helper Methods
+
+    // Kiểm tra các quyền của ứng dụng
+    public void CheckSomePermission(){
+        // Check for permissions
+        int permission = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int permission2 = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO);
+
+        // If we don't have permissions, ask user for permissions
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            String[] PERMISSIONS_STORAGE = {
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            };
+            int REQUEST_EXTERNAL_STORAGE = 1;
+
+            ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
+
+        if (permission2!=PackageManager.PERMISSION_GRANTED){
+            String[] RECORDER_AUDIO = {Manifest.permission.RECORD_AUDIO};
+            int REQUEST = 1;
+            ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    RECORDER_AUDIO,
+                    REQUEST
+            );
+        }
+    }
+
+    // Xử lí khi nhận được tin nhắn là chat voice
+
+    public static void HandleChatVoiceMessage(String type, byte[] data){
+        CanPlay = false;
+
+        if (type.equals("V@O@I@C@E@")){
+            try {
+                FileOutputStream out = new FileOutputStream(mOutputFile,false);
+                out.write(data);
+
+            } catch (Exception ex) {
+
+            }
+        }
+        else
+        {
+            try {
+                FileOutputStream out = new FileOutputStream(mOutputFile,true);
+                out.write(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (data.length < 1024){
+            CanPlay = true;
+            btnPlay.setBackgroundResource(R.drawable.effect);
+        }
+    }
+
     // endregion
 }

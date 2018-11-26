@@ -2,8 +2,10 @@ package cnpm31.nhom10.caroplay;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.text.InputType;
 import android.view.KeyEvent;
@@ -20,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,8 +40,13 @@ public class ChatFragment extends android.app.Fragment {
     public EditText editChat;
     public Button btnCloseChat;
     public Button btnResetText;
+    public ImageButton btnRecorder;
     public List<ImageButton> listImgButton;
     // endregion
+
+    public boolean IsRecording = false;
+    public MediaRecorder myRecorder;
+    public String mOutputFile;
 
     public ChatFragment() {}
 
@@ -49,10 +57,56 @@ public class ChatFragment extends android.app.Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
 
+        mOutputFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/voice.3gp";
+
         /* Ánh xạ giao diện */
         editChat = view.findViewById(R.id.editChat);
         btnCloseChat = view.findViewById(R.id.btnCloseChat);
         btnResetText = view.findViewById(R.id.btnResetText);
+        btnRecorder = view.findViewById(R.id.btnRecorder);
+
+        // Sự kiện chat voice
+        btnRecorder.setOnClickListener(v -> {
+            if(IsRecording){
+                IsRecording = false;
+                myRecorder.stop();
+                myRecorder.release();
+                myRecorder = null;
+
+                try {
+                    MainActivity.connectedBluetooth.sendFile(mOutputFile,"voice");
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                Toast.makeText(getContext(), "Ghi âm đã dừng và được gửi", Toast.LENGTH_LONG).show();
+            }
+            else{
+                myRecorder = new MediaRecorder();
+                myRecorder.reset();
+
+                try{
+                    myRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    myRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                    myRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
+                    myRecorder.setOutputFile(mOutputFile);
+                }
+                catch (Exception ex){
+                    Toast.makeText(getContext() ,ex.getMessage(),Toast.LENGTH_LONG).show();
+                }
+
+                try{
+                    IsRecording = true;
+                    myRecorder.prepare();
+                    myRecorder.start();
+                } catch (Exception ex){
+                    Toast.makeText(null,ex.getMessage(),Toast.LENGTH_LONG).show();
+                }
+
+                Toast.makeText(getContext(),"Ghi âm bắt đầu",Toast.LENGTH_LONG).show();
+            }
+        });
 
         /* Sự kiện thoát */
         btnCloseChat.setOnClickListener(v -> {
