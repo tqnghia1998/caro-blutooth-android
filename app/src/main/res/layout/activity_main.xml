@@ -14,9 +14,9 @@
 
     <ImageView
         android:id="@+id/avatarUser2"
-        android:background="@drawable/effect"
         android:layout_width="128dp"
         android:layout_height="128dp"
+        android:tag="defaultAvatarUser2"
         android:scaleType="centerCrop"
         android:padding="10dp"
         android:src="@drawable/avatar_user1"
@@ -86,12 +86,17 @@
     <ImageButton
         android:id="@+id/btnPlay"
         android:layout_width="50dp"
-        android:layout_height="35dp"
+        android:layout_height="25dp"
         android:src="@drawable/loa"
-        android:layout_marginRight="50dp"
-        android:layout_below="@+id/nameUser1"
-        android:layout_toRightOf="@+id/avatarUser1"
-        android:layout_marginTop="10dp"/>
+        android:scaleType="fitCenter"
+        android:visibility="invisible"
+        android:padding="3dp"
+        android:background="@drawable/button_style_red"
+        android:layout_above="@id/frameGvGame"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="25dp"
+        android:layout_marginBottom="25dp"
+        android:layout_centerInParent="true"/>
 
     <ImageView
         android:id="@+id/exit"

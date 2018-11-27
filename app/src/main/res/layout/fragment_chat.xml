@@ -1,52 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/tooltip"
     android:orientation="vertical">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="35dp"
-        android:layout_marginBottom="0dp">
+        android:layout_marginStart="35dp"
+        android:layout_marginEnd="35dp">
 
         <ImageButton
             android:id="@+id/btnRecorder"
             android:layout_width="80dp"
             android:layout_height="35dp"
             android:src="@drawable/micro"
-            android:layout_marginLeft="40dp"
-            android:layout_marginRight="120dp"
+            android:scaleType="fitCenter"
+            android:padding="5dp"
+            android:layout_alignParentStart="true"
             android:background="@drawable/button_style"/>
 
         <Button
             android:id="@+id/btnCloseChat"
             android:layout_width="80dp"
+            android:layout_height="35dp"
             android:textColor="#FFFFFF"
             android:textAllCaps="false"
-            android:layout_height="35dp"
-            android:layout_gravity="right"
-            android:layout_marginEnd="30dp"
+            android:layout_alignParentEnd="true"
             android:background="@drawable/button_style"
             android:textSize="18sp"
-            android:text="Đóng"/>
+            android:text="Đóng"
+            tools:ignore="HardcodedText"/>
 
-    </LinearLayout>
-
-    <!--<Button-->
-        <!--android:id="@+id/btnCloseChat"-->
-        <!--android:layout_width="80dp"-->
-        <!--android:textColor="#FFFFFF"-->
-        <!--android:textAllCaps="false"-->
-        <!--android:layout_height="35dp"-->
-        <!--android:layout_gravity="right"-->
-        <!--android:layout_marginTop="35dp"-->
-        <!--android:layout_marginEnd="30dp"-->
-        <!--android:background="@drawable/button_style"-->
-        <!--android:textSize="18sp"-->
-        <!--android:text="Đóng"/>-->
-
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -55,7 +44,7 @@
 
         <EditText
             android:id="@+id/editChat"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:gravity="center"
@@ -70,7 +59,7 @@
             android:layout_gravity="center_vertical"
             android:layout_height="35dp"
             android:layout_width="35dp"
-            android:layout_marginEnd="30dp"/>
+            android:layout_marginEnd="35dp"/>
     </LinearLayout>
 
     <LinearLayout

@@ -1,5 +1,6 @@
 package cnpm31.nhom10.caroplay;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -67,6 +68,7 @@ public class EditProfileFragment extends android.app.Fragment {
     public EditProfileFragment() {
     }
 
+    @SuppressLint("ResourceType")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -118,7 +120,7 @@ public class EditProfileFragment extends android.app.Fragment {
             try {
                 out = new FileOutputStream(avatar);
                 Bitmap bitmap = ((BitmapDrawable)imgAvatar.getDrawable()).getBitmap();
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+                bitmap.compress(Bitmap.CompressFormat.WEBP, 75, out);
                 avatarUser1.setImageBitmap(bitmap);
             }
             catch (FileNotFoundException e) {
@@ -147,6 +149,7 @@ public class EditProfileFragment extends android.app.Fragment {
         /* Sự kiện quay về màn hình welcome */
         btnBackToWelcome.setOnClickListener(v -> fragmentManager
                 .beginTransaction()
+                .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
                 .replace(R.id.frameWelcome, welcomeFragment).commit());
 
         /* Sự kiện thay avatar từ chụp ảnh */

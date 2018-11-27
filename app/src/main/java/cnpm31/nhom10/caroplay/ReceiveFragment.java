@@ -41,9 +41,7 @@ public class ReceiveFragment extends android.app.Fragment {
 
         /* Ánh xạ giao diện */
         txtReceive = view.findViewById(R.id.txtReceive);
-
         txtReceive.setText(getArguments().getString("text"));
-
         return view;
     }
 }
