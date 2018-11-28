@@ -63,12 +63,13 @@ public class EditProfileFragment extends android.app.Fragment {
     public Button btnFromLibrary;
     public EditText editUsername;
     public RadioGroup gender;
+    boolean isSaving = false;
     // endregion
 
     public EditProfileFragment() {
     }
 
-    @SuppressLint("ResourceType")
+    @SuppressLint({"ResourceType"})
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -106,6 +107,10 @@ public class EditProfileFragment extends android.app.Fragment {
 
         /* SỰ KIỆN LƯU THÔNG TIN */
         btnSave.setOnClickListener(v -> {
+
+            if (isSaving) return;
+            isSaving = true;
+
             // Lưu tên và giới tính trước
             SingletonSharePrefs.getInstance().put("name", editUsername.getText().toString());
             SingletonSharePrefs.getInstance().put("gender", gender.getCheckedRadioButtonId() == R.id.rdoMale);
@@ -144,6 +149,7 @@ public class EditProfileFragment extends android.app.Fragment {
                 dialog.cancel();
             });
             b.show();
+            isSaving = false;
         });
 
         /* Sự kiện quay về màn hình welcome */

@@ -61,6 +61,8 @@ public class ChatFragment extends android.app.Fragment {
         /* Sự kiện ghi âm */
         btnRecorder.setOnClickListener(v -> {
 
+            if (!isPlaying) return;
+
             // Nếu đang ghi thì dừng
             if (IsRecording){
                 IsRecording = false;
@@ -120,6 +122,7 @@ public class ChatFragment extends android.app.Fragment {
 
         /* Sự kiện gửi tin nhắn */
         editChat.setOnEditorActionListener((v, actionId, event) -> {
+
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 if (editChat.getText().toString().length() > 0) {
                     if (isPlaying) {

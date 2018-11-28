@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -21,6 +22,9 @@ import cnpm31.nhom10.caroplay.Gestures.MoveListener;
 import cnpm31.nhom10.caroplay.Gestures.ScaleListener;
 import cnpm31.nhom10.caroplay.MainActivity;
 import cnpm31.nhom10.caroplay.R;
+
+import static cnpm31.nhom10.caroplay.MainActivity.mainContext;
+import static com.facebook.AccessTokenManager.SHARED_PREFERENCES_NAME;
 
 public class GameBoard {
 
@@ -44,6 +48,10 @@ public class GameBoard {
     private MoveGestureDetector mMoveDetector;
 
     Context _context;
+
+    // Array dùng để lưu bàn cờ
+    public static String MACUser2 = new String("");
+    public static StringBuilder listMoves = new StringBuilder();
 
     // Constructor
     @SuppressLint("ClickableViewAccessibility")
@@ -109,6 +117,9 @@ public class GameBoard {
                 currTempPos = -1;
                 gridViewAdapter.notifyDataSetChanged();
 
+                // Lưu vào bộ nhớ
+                // saveBoard(position, true);
+
                 // Đợi đối thủ
                 isWaiting = true;
                 MainActivity.avatarUser1.setBackgroundResource(0);
@@ -140,6 +151,9 @@ public class GameBoard {
         // Cập nhật bàn cờ
         boardGame.get(position).setStatus(STATUS_USER2);
         gridViewAdapter.notifyDataSetChanged();
+
+        // Lưu vào bộ nhớ
+        // saveBoard(position, false);
 
         // Không đợi nữa, tới lượt mình
         isWaiting = false;
@@ -210,5 +224,14 @@ public class GameBoard {
         gridViewAdapter.notifyDataSetChanged();
         isWaiting = true;
     }
+
+    /*// Phương thức lưu bàn cờ
+    public void saveBoard(int position, boolean isOurMove) {
+        if (MACUser2.equals("")) return;
+        if (!isOurMove) position = -position;
+        listMoves.append(position).append(",");
+        SingletonSharePrefs.getInstance().put(MACUser2, listMoves.toString());
+        SingletonSharePrefs.getInstance().put("isWaiting", isWaiting);
+    }*/
 
 }

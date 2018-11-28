@@ -11,9 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaPlayer;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -25,13 +23,10 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.facebook.share.model.ShareHashtag;
@@ -39,14 +34,11 @@ import com.facebook.share.model.SharePhoto;
 import com.facebook.share.model.SharePhotoContent;
 import com.facebook.share.widget.ShareDialog;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,7 +50,6 @@ import cnpm31.nhom10.caroplay.GameBoard.SingletonSharePrefs;
 
 import static cnpm31.nhom10.caroplay.EditProfileFragment.getCircledBitmap;
 import static cnpm31.nhom10.caroplay.ScreenShot.getScreenShot;
-import static cnpm31.nhom10.caroplay.WelcomeFragment.btnEditProfile;
 
 public class MainActivity extends Activity {
 
@@ -197,9 +188,27 @@ public class MainActivity extends Activity {
                         .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
                         .remove(welcomeFragment).commit();
                 avatarUser1.setBackgroundResource(0);
+
+                /*// Kiểm tra có lưu không
+                String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+                if (!savedString.equals("")) {
+                    StringTokenizer st = new StringTokenizer(savedString, ",");
+                    for (int i = 0; i < st.countTokens(); i++) {
+                        int curPos = Integer.parseInt(st.nextToken());
+                        if (curPos < 0) {
+                            gameBoard.boardGame.get(-curPos).setStatus((char)2);
+                        }
+                        else {
+                            gameBoard.boardGame.get(curPos).setStatus((char)1);
+                        }
+                    }
+                    gameBoard.gridViewAdapter.notifyDataSetChanged();
+                    gameBoard.isWaiting = SingletonSharePrefs.getInstance().get("isWaiting", Boolean.class);
+                }*/
             }
             // Nếu nhận được tin CONNECT FAILED, thì khi đó mình không thể kết nối
             else if (message.equals("C@O@N@N@E@C@T@ @F@A@I@L@E@D@")) {
+
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
                 b.setTitle("Không thể kết nối!");
                 b.setMessage("Vui lòng thử lại.");
@@ -217,6 +226,45 @@ public class MainActivity extends Activity {
                 int position = Integer.parseInt(message.substring(1, message.length() - 1));
                 gameBoard.rivalMove(position);
             }
+            // endregion
+
+            // region Thông điệp chơi lại
+            else if (message.length() >= 10 && message.substring(0, 10).equals("R@E@S@E@T@")) {
+                if (message.equals("R@E@S@E@T@R@E@Q@U@E@S@T@")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ muốn chơi lại!");
+                    b.setMessage("Nhấn OK để đồng ý.\nNhấn Cancel để từ chối.");
+                    b.setNegativeButton("Cancel", (dialog, which) -> {
+                        dialog.cancel();
+                        connectedBluetooth.sendData("R@E@S@E@T@F@A@I@L@E@D@".getBytes());
+                    });
+                    b.setPositiveButton("Ok", (dialog, which) -> {
+                        gameBoard.reSet();
+                        gameBoard.isWaiting = false; // Được quyền chơi trước
+                        connectedBluetooth.sendData("R@E@S@E@T@S@U@C@C@E@E@D@".getBytes());
+                    }).show();
+                }
+                else if (message.equals("R@E@S@E@T@F@A@I@L@E@D@")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ không đồng ý chơi lại!");
+                    b.setNegativeButton("Ok", (dialog, which) -> {
+                        dialog.cancel();
+                    }).show();
+                    isResetRequesting = false;
+                }
+                else if (message.equals("R@E@S@E@T@S@U@C@C@E@E@D@")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ đã đồng ý chơi lại!");
+                    b.setNegativeButton("Ok", (dialog, which) -> {
+                        dialog.cancel();
+                    }).show();
+                    isResetRequesting = false;
+                    gameBoard.reSet();
+                    gameBoard.isWaiting = true; // Đối thủ được quyền chơi trước
+                }
+            }
+
+
             // endregion
 
             // region Thông điệp đối thủ thoát khỏi phòng
@@ -293,6 +341,7 @@ public class MainActivity extends Activity {
     // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN CHƠI CỜ
     public static GameBoard gameBoard;
     public static ImageView imgExit;
+    public static ImageView imgReset;
     public static boolean isPlaying;
     public static TextView nameUser1;
     public static TextView nameUser2;
@@ -301,6 +350,7 @@ public class MainActivity extends Activity {
     public static ImageView avatarUser2;
     public static ImageButton btnPlay;
     public static boolean CanPlay = false;
+    public static boolean isResetRequesting = false;
     // endregion
 
     // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN KHÁC
@@ -313,7 +363,6 @@ public class MainActivity extends Activity {
     public ImageButton ShareButton;
     ShareDialog shareDialog;
     Bitmap bitmap;
-
     // endregion
 
     @SuppressLint("ResourceType")
@@ -372,6 +421,7 @@ public class MainActivity extends Activity {
         nameUser1 = findViewById(R.id.nameUser1);
         nameUser2 = findViewById(R.id.nameUser2);
         imgExit = findViewById(R.id.exit);
+        imgReset = findViewById(R.id.reset);
         btnPlay = findViewById(R.id.btnPlay);
 
         /* Cập nhật ảnh đại diện và tên */
@@ -389,6 +439,24 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
         }
+
+        /* Sự kiện yêu cầu chơi lại */
+        imgReset.setOnClickListener(v -> {
+            if (!isPlaying) return;
+            if (isResetRequesting) return;
+            AlertDialog.Builder b = new AlertDialog.Builder(v.getContext());
+            b.setTitle("Xác nhận");
+            b.setMessage("Bạn có muốn yêu cầu chơi lại?");
+
+            // Nếu cancel
+            b.setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
+
+            // Nếu OK - đồng ý đăng ký
+            b.setPositiveButton("Ok", (dialog, id) -> {
+                connectedBluetooth.sendData("R@E@S@E@T@R@E@Q@U@E@S@T@".getBytes());
+                isResetRequesting = true;
+            }).show();
+        });
 
         /* Sự kiện thoát khỏi phòng */
         imgExit.setOnClickListener(v -> {
@@ -451,7 +519,7 @@ public class MainActivity extends Activity {
             MediaPlayer mediaPlayer = new MediaPlayer();
             try {
                 mediaPlayer.setDataSource(SingletonSharePrefs
-                        .getInstance().get("caroPlayPath", String.class) + "/voice.3gp");
+                        .getInstance().get("caroPlayPath", String.class) + "/voiceUser2.3gp");
                 mediaPlayer.prepare();
                 mediaPlayer.start();
             } catch (Exception ignored) {}
@@ -470,14 +538,14 @@ public class MainActivity extends Activity {
             SingletonSharePrefs.getInstance().put("isFirstLaunch", "TQN");
         }
 
-        /**Login fb**/
-
+        /** LOGIN FACEBOOK **/
+        // region LOGIN FACEBOOK
         callbackManager = CallbackManager.Factory.create();
 
-        loginButton = (LoginButton) findViewById(R.id.login_button);
+        loginButton = findViewById(R.id.login_button);
         loginButton.setReadPermissions("email");
         // If using in a fragment
-        //loginButton.setFragment(this);
+        // loginButton.setFragment(this);
 
         // Callback registration
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
@@ -501,11 +569,11 @@ public class MainActivity extends Activity {
         shareDialog = new ShareDialog(this);
         ShareButton = (ImageButton)findViewById(R.id.fb_share);
         //Share từ thư viện
-//        ShareButton.setOnClickListener(v -> {
-//            Intent intent = new Intent(Intent.ACTION_PICK);
-//            intent.setType("image/*");
-//            startActivityForResult(intent, Select_Image);
-//        });
+        // ShareButton.setOnClickListener(v -> {
+        // Intent intent = new Intent(Intent.ACTION_PICK);
+        // intent.setType("image/*");
+        // startActivityForResult(intent, Select_Image);
+        // });
         ShareButton.setOnClickListener(v -> {
             View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
             bitmap=getScreenShot(rootView);
@@ -515,11 +583,13 @@ public class MainActivity extends Activity {
             SharePhotoContent content = new SharePhotoContent.Builder()
                     .addPhoto(photo)
                     .setShareHashtag(new ShareHashtag.Builder()
-                            .setHashtag("#CaroPlayNhom10Android")
+                            .setHashtag("#CaroPlayNhom11Android")
                             .build())
                     .build();
             shareDialog.show(content);
         });
+
+        // endregion
     }
 
     @Override

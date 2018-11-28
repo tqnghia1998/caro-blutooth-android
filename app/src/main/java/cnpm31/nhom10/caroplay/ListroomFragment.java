@@ -1,5 +1,6 @@
 package cnpm31.nhom10.caroplay;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -25,8 +26,10 @@ import java.util.HashMap;
 import java.util.Set;
 
 import cnpm31.nhom10.caroplay.Bluetooth.ClientBluetooth;
+import cnpm31.nhom10.caroplay.GameBoard.GameBoard;
 
 import static cnpm31.nhom10.caroplay.MainActivity.bluetoothAdapter;
+import static cnpm31.nhom10.caroplay.MainActivity.mainContext;
 
 
 public class ListroomFragment extends android.app.Fragment {
@@ -114,6 +117,11 @@ public class ListroomFragment extends android.app.Fragment {
 
             /* Lấy BluetoothDevice tương ứng ra*/
             BluetoothDevice device = listDevices.get(listRoom.get(position));
+            if (device != null) {
+                if (device.getAddress() != null) {
+                    GameBoard.MACUser2 = device.getAddress();
+                }
+            }
 
             /* Kết nối đến server */
             clientBluetooth = new ClientBluetooth(device);

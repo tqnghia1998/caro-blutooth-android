@@ -112,7 +112,7 @@ public class ConnectedBluetooth extends Thread {
                         // Mở file (nhắn thoại hoặc avatar)
                         output = new FileOutputStream(SingletonSharePrefs
                                 .getInstance().get("caroPlayPath", String.class)
-                                + (i == type.length ? "/voice.3gp" : "/avatarUser2.jpg"));
+                                + (i == type.length ? "/voiceUser2.3gp" : "/avatarUser2.jpg"));
 
                         // Ghi vào file
                         for (int e = 0; e <countFragment ; ++e){
