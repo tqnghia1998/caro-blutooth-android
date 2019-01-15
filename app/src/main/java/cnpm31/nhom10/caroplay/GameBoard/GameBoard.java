@@ -3,6 +3,8 @@ package cnpm31.nhom10.caroplay.GameBoard;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -112,13 +114,14 @@ public class GameBoard {
             // Nếu ô đó vừa click rồi, giờ click lần nữa thì chọn ô đó
             if (boardGame.get(position).getStatus() == STATUS_TEMPORARY) {
 
+                //Lưu vào bộ nhớ
+                saveBoard(position, true);
+
                 // Đặt nước đi của mình lên bàn cờ
                 boardGame.get(position).setStatus(STATUS_USER1);
                 currTempPos = -1;
                 gridViewAdapter.notifyDataSetChanged();
 
-                // Lưu vào bộ nhớ
-                // saveBoard(position, true);
 
                 // Đợi đối thủ
                 isWaiting = true;
@@ -148,12 +151,13 @@ public class GameBoard {
     // Phương thức chọn ô của đối thủ
     public void rivalMove(int position) {
 
+        // Lưu vào bộ nhớ
+        saveBoard(position, false);
+
         // Cập nhật bàn cờ
         boardGame.get(position).setStatus(STATUS_USER2);
         gridViewAdapter.notifyDataSetChanged();
 
-        // Lưu vào bộ nhớ
-        // saveBoard(position, false);
 
         // Không đợi nữa, tới lượt mình
         isWaiting = false;
@@ -225,13 +229,14 @@ public class GameBoard {
         isWaiting = true;
     }
 
-    /*// Phương thức lưu bàn cờ
+    // Phương thức lưu bàn cờ
     public void saveBoard(int position, boolean isOurMove) {
         if (MACUser2.equals("")) return;
         if (!isOurMove) position = -position;
         listMoves.append(position).append(",");
         SingletonSharePrefs.getInstance().put(MACUser2, listMoves.toString());
         SingletonSharePrefs.getInstance().put("isWaiting", isWaiting);
-    }*/
+
+    }
 
 }

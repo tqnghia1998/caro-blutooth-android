@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -40,6 +41,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -156,56 +158,220 @@ public class MainActivity extends Activity {
             if (message.equals(mainContext.getString(R.string.CLIENTCONFIRM))) {
                 // Nếu mình đang là server, và nhận được confirm từ client
 
-                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Đối thủ đã vào phòng!");
-                b.setMessage("Bạn là người chơi trước.");
-                b.setNegativeButton("Ok", (dialog, which) -> {
-                    dialog.cancel();
-                }).show();
-
-                // Mình có thể đi nước đầu tiên
-                isPlaying = true;
-                gameBoard.isWaiting = false;
-                avatarUser2.setBackgroundResource(0);
+                //connectedBluetooth.sendData("M@A@C@".getBytes());
 
                 // Gửi tên cho đối phương
                 connectedBluetooth.sendData(("N@A@M@E@" + nameUser1.getText().toString()).getBytes());
+
+                GameBoard.MACUser2 = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
+
+                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+
+                // Kiểm tra có lưu không
+                String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+                if (!savedString.equals("")) {
+                    if (isContinueRequesting) return;
+
+                    b.setTitle("Xác nhận");
+                    b.setMessage("Bạn có muốn yêu cầu chơi tiếp không?");
+
+                    // Nếu cancel
+                    b.setNegativeButton("Cancel", (dialog, id) -> {
+
+                        //Xóa nước cờ đã lưu
+                        SingletonSharePrefs.getInstance().clear();
+
+                        b.setMessage("Bạn là người chơi trước.");
+
+                        dialog.cancel();
+                        // Mình có thể đi nước đầu tiên
+                        isPlaying = true;
+                        gameBoard.isWaiting = false;
+                        avatarUser1.setBackgroundResource(R.drawable.effect);
+
+                    });
+
+                    // Nếu OK - đồng ý đăng ký
+                    b.setPositiveButton("Ok", (dialog, id) -> {
+                        connectedBluetooth.sendData("C@O@N@T@I@N@U@E@C@L@I@E@N@T".getBytes());
+                        isContinueRequesting = true;
+                    }).show();
+
+                }
+                else {
+                    b.setTitle("Đối thủ đã vào phòng!");
+                    b.setMessage("Bạn là người chơi trước.");
+                    b.setNegativeButton("Ok", (dialog, which) -> {
+                        dialog.cancel();
+                    }).show();
+
+                    // Mình có thể đi nước đầu tiên
+                    isPlaying = true;
+                    gameBoard.isWaiting = false;
+                    avatarUser1.setBackgroundResource(R.drawable.effect);
+
+                }
+
+            }
+
+            else if (message.length() >= 16 && message.substring(0, 16).equals("C@O@N@T@I@N@U@E@")) {
+
+                if (message.equals("C@O@N@T@I@N@U@E@C@L@I@E@N@T")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ muốn chơi tiếp!");
+                    b.setMessage("Nhấn OK để đồng ý.\nNhấn Cancel để từ chối.");
+                    b.setNegativeButton("Cancel", (dialog, which) -> {
+                        dialog.cancel();
+
+                        fragmentManager.beginTransaction()
+                                .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
+                                .remove(welcomeFragment).commit();
+
+                        avatarUser2.setBackgroundResource(R.drawable.effect);
+
+                        //Xóa nước cờ đã lưu
+                        SingletonSharePrefs.getInstance().clear();
+
+                        connectedBluetooth.sendData("C@O@N@T@I@N@U@E@F@A@I@L@E@D@".getBytes());
+                    });
+                    b.setPositiveButton("Ok", (dialog, which) -> {
+
+                        fragmentManager.beginTransaction()
+                                .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
+                                .remove(welcomeFragment).commit();
+                        avatarUser1.setBackgroundResource(0);
+
+                        connectedBluetooth.sendData("C@O@N@T@I@N@U@E@S@U@C@C@E@E@D@".getBytes());
+
+                        String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+                        StringTokenizer st = new StringTokenizer(savedString, ",");
+                        int count = st.countTokens();
+                        for (int i = 0; i < count; i++) {
+                            String temp = st.nextToken();
+                            int curPos = Integer.parseInt(temp);
+                            if (curPos < 0) {
+                                gameBoard.boardGame.get(-curPos).setStatus((char)2);
+                            }
+                            else {
+                                gameBoard.boardGame.get(curPos).setStatus((char)1);
+                            }
+                        }
+                        gameBoard.gridViewAdapter.notifyDataSetChanged();
+                        gameBoard.isWaiting = !SingletonSharePrefs.getInstance().get("isWaiting", Boolean.class);
+                        if (!gameBoard.isWaiting) {
+                            b.setMessage("Bạn là người chơi trước.");
+                            avatarUser1.setBackgroundResource(R.drawable.effect);
+                            avatarUser2.setBackgroundResource(0);
+                        }
+                        else
+                        {
+                            b.setMessage("Đối thủ người chơi trước.");
+                            avatarUser2.setBackgroundResource(R.drawable.effect);
+                            avatarUser1.setBackgroundResource(0);
+                        }
+                        isPlaying =true;
+                    }).show();
+                }
+
+                else if (message.equals("C@O@N@T@I@N@U@E@F@A@I@L@E@D@")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ không đồng ý chơi tiếp!");
+                    b.setNegativeButton("Ok", (dialog, which) -> {
+                        dialog.cancel();
+
+                        //Xóa nước cờ đã lưu
+                        SingletonSharePrefs.getInstance().clear();
+
+                        b.setMessage("Bạn là người chơi trước.");
+                        // Mình có thể đi nước đầu tiên
+                        isPlaying = true;
+                        gameBoard.isWaiting = false;
+                        avatarUser1.setBackgroundResource(R.drawable.effect);
+                    }).show();
+                    isContinueRequesting = false;
+                }
+                else if (message.equals("C@O@N@T@I@N@U@E@S@U@C@C@E@E@D@")) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Đối thủ đã đồng ý chơi tiếp!");
+
+                    String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+                    if (!savedString.equals("")) {
+                        StringTokenizer st = new StringTokenizer(savedString, ",");
+                        int count = st.countTokens();
+                        for (int i = 0; i < count; i++) {
+                            String temp = st.nextToken();
+                            int curPos = Integer.parseInt(temp);
+                            if (curPos < 0) {
+                                gameBoard.boardGame.get(-curPos).setStatus((char) 2);
+                            } else {
+                                gameBoard.boardGame.get(curPos).setStatus((char) 1);
+                            }
+                        }
+                        gameBoard.gridViewAdapter.notifyDataSetChanged();
+                        gameBoard.isWaiting = !SingletonSharePrefs.getInstance().get("isWaiting", Boolean.class);
+                    }
+
+                    if (!gameBoard.isWaiting) {
+                        b.setMessage("Bạn là người chơi trước.");
+                        b.setNegativeButton("Ok", (dialog, which) -> {
+                            dialog.cancel();
+                        }).show();
+                        avatarUser2.setBackgroundResource(0);
+                        avatarUser1.setBackgroundResource(R.drawable.effect);
+                    }
+                    else
+                    {
+                        b.setMessage("Đối thủ người chơi trước.");
+                        b.setNegativeButton("Ok", (dialog, which) -> {
+                            dialog.cancel();
+                        }).show();
+
+                        avatarUser1.setBackgroundResource(0);
+                        avatarUser2.setBackgroundResource(R.drawable.effect);
+                    }
+
+                    isPlaying = true;
+                    isContinueRequesting = false;
+                }
+
             }
             else if (message.equals(mainContext.getString(R.string.SERVERCONFIRM))) {
                 // Nếu mình đang là client, và nhận được confirm từ server
 
-                AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
-                b.setTitle("Bạn đã vào phòng!");
-                b.setMessage("Chủ phòng là người chơi trước.");
-                b.setNegativeButton("Ok", (dialog, which) -> {
-                    dialog.cancel();
-                }).show();
-
+                if (!isContinueRequesting) {
+                    AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
+                    b.setTitle("Bạn đã vào phòng!");
+                    if (gameBoard.isWaiting) {
+                        b.setMessage("Chủ phòng là người chơi trước.");
+                    } else {
+                        b.setMessage("Bạn là người chơi trước.");
+                    }
+                    b.setNegativeButton("Ok", (dialog, which) -> {
+                        dialog.cancel();
+                    }).show();
+                }
                 // Tắt giao diện Welcome
                 isPlaying = true;
                 gameBoard.isWaiting = true;
                 fragmentManager.beginTransaction()
                         .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
                         .remove(welcomeFragment).commit();
-                avatarUser1.setBackgroundResource(0);
 
-                /*// Kiểm tra có lưu không
-                String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
-                if (!savedString.equals("")) {
-                    StringTokenizer st = new StringTokenizer(savedString, ",");
-                    for (int i = 0; i < st.countTokens(); i++) {
-                        int curPos = Integer.parseInt(st.nextToken());
-                        if (curPos < 0) {
-                            gameBoard.boardGame.get(-curPos).setStatus((char)2);
-                        }
-                        else {
-                            gameBoard.boardGame.get(curPos).setStatus((char)1);
-                        }
-                    }
-                    gameBoard.gridViewAdapter.notifyDataSetChanged();
-                    gameBoard.isWaiting = SingletonSharePrefs.getInstance().get("isWaiting", Boolean.class);
-                }*/
+                avatarUser1.setBackgroundResource(0);
+                avatarUser2.setBackgroundResource(R.drawable.effect);
+
             }
+
+            /*else if (message.length() >= 6 && message.substring(0, 6).equals("M@A@C@")) {
+                if (message.equals("M@A@C@")) {
+                    String MacClient = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
+                    connectedBluetooth.sendData(("M@A@C@" + MacClient).getBytes());
+                }
+                else
+                {
+                    GameBoard.MACUser2 = message.substring(6, message.length());
+                }
+            }*/
             // Nếu nhận được tin CONNECT FAILED, thì khi đó mình không thể kết nối
             else if (message.equals("C@O@N@N@E@C@T@ @F@A@I@L@E@D@")) {
 
@@ -239,6 +405,10 @@ public class MainActivity extends Activity {
                         connectedBluetooth.sendData("R@E@S@E@T@F@A@I@L@E@D@".getBytes());
                     });
                     b.setPositiveButton("Ok", (dialog, which) -> {
+
+                        //Xóa nước cờ đã lưu
+                        SingletonSharePrefs.getInstance().clear();
+
                         gameBoard.reSet();
                         gameBoard.isWaiting = false; // Được quyền chơi trước
                         connectedBluetooth.sendData("R@E@S@E@T@S@U@C@C@E@E@D@".getBytes());
@@ -261,6 +431,10 @@ public class MainActivity extends Activity {
                     isResetRequesting = false;
                     gameBoard.reSet();
                     gameBoard.isWaiting = true; // Đối thủ được quyền chơi trước
+
+                    //Xóa nước cờ đã lưu
+                    SingletonSharePrefs.getInstance().clear();
+
                 }
             }
 
@@ -351,6 +525,7 @@ public class MainActivity extends Activity {
     public static ImageButton btnPlay;
     public static boolean CanPlay = false;
     public static boolean isResetRequesting = false;
+    public static boolean isContinueRequesting = false;
     // endregion
 
     // region CÁC KHAI BÁO LIÊN QUAN ĐẾN GIAO DIỆN KHÁC
