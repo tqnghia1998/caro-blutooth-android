@@ -131,7 +131,10 @@ public class MainActivity extends Activity {
 
                 // Nếu mình là chủ phòng, và đã nhận tên của đối phương, thì bắt đầu gửi ảnh
                 if (message.length() > 16 && message.substring(8, 16).equals("B@O@T@H@")) {
-                    nameUser2.setText(message.substring(16));
+                    nameUser2.setText(message.substring(33));
+
+                    GameBoard.MACUser2 = message.substring(16,33);
+
                     try {
                         connectedBluetooth.sendFile(
                                 SingletonSharePrefs.getInstance().get("caroPlayPath", String.class)
@@ -148,8 +151,10 @@ public class MainActivity extends Activity {
                 else {
                     nameUser2.setText(message.substring(8));
 
-                    // Gửi lại tên cho chủ phòng
-                    connectedBluetooth.sendData(("N@A@M@E@B@O@T@H@" + nameUser1.getText().toString()).getBytes());
+                    String MACClient = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
+
+                    // Gửi lại tên và MAC cho chủ phòng
+                    connectedBluetooth.sendData(("N@A@M@E@B@O@T@H@" + MACClient + nameUser1.getText().toString()).getBytes());
                 }
             }
             // endregion
@@ -158,12 +163,11 @@ public class MainActivity extends Activity {
             if (message.equals(mainContext.getString(R.string.CLIENTCONFIRM))) {
                 // Nếu mình đang là server, và nhận được confirm từ client
 
-                //connectedBluetooth.sendData("M@A@C@".getBytes());
-
                 // Gửi tên cho đối phương
                 connectedBluetooth.sendData(("N@A@M@E@" + nameUser1.getText().toString()).getBytes());
 
-                GameBoard.MACUser2 = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
+                //if (GameBoard.MACUser2.equals(""))
+                   // return;
 
                 AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
 
@@ -338,6 +342,13 @@ public class MainActivity extends Activity {
             else if (message.equals(mainContext.getString(R.string.SERVERCONFIRM))) {
                 // Nếu mình đang là client, và nhận được confirm từ server
 
+                // Tắt giao diện Welcome
+                isPlaying = true;
+                gameBoard.isWaiting = true;
+                fragmentManager.beginTransaction()
+                        .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
+                        .remove(welcomeFragment).commit();
+
                 if (!isContinueRequesting) {
                     AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
                     b.setTitle("Bạn đã vào phòng!");
@@ -350,28 +361,12 @@ public class MainActivity extends Activity {
                         dialog.cancel();
                     }).show();
                 }
-                // Tắt giao diện Welcome
-                isPlaying = true;
-                gameBoard.isWaiting = true;
-                fragmentManager.beginTransaction()
-                        .setCustomAnimations(R.anim.zoom_out_animation, R.anim.zoom_out_animation)
-                        .remove(welcomeFragment).commit();
 
                 avatarUser1.setBackgroundResource(0);
                 avatarUser2.setBackgroundResource(R.drawable.effect);
 
             }
 
-            /*else if (message.length() >= 6 && message.substring(0, 6).equals("M@A@C@")) {
-                if (message.equals("M@A@C@")) {
-                    String MacClient = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
-                    connectedBluetooth.sendData(("M@A@C@" + MacClient).getBytes());
-                }
-                else
-                {
-                    GameBoard.MACUser2 = message.substring(6, message.length());
-                }
-            }*/
             // Nếu nhận được tin CONNECT FAILED, thì khi đó mình không thể kết nối
             else if (message.equals("C@O@N@N@E@C@T@ @F@A@I@L@E@D@")) {
 
