@@ -425,6 +425,12 @@ public class MainActivity extends Activity {
                         //Xóa nước cờ đã lưu
                         SingletonSharePrefs.getInstance().clear();
 
+                        //Set lại người chơi hiên tại
+                        if(gameBoard.isWaiting) {
+                            avatarUser2.setBackgroundResource(0);
+                            avatarUser1.setBackgroundResource(R.drawable.effect);
+                        }
+
                         gameBoard.reSet();
                         gameBoard.isWaiting = false; // Được quyền chơi trước
                         connectedBluetooth.sendData("R@E@S@E@T@S@U@C@C@E@E@D@".getBytes());
@@ -444,6 +450,13 @@ public class MainActivity extends Activity {
                     b.setNegativeButton("Ok", (dialog, which) -> {
                         dialog.cancel();
                     }).show();
+
+                    //Set lại người chơi hiên tại
+                    if(!gameBoard.isWaiting) {
+                        avatarUser1.setBackgroundResource(0);
+                        avatarUser2.setBackgroundResource(R.drawable.effect);
+                    }
+
                     isResetRequesting = false;
                     gameBoard.reSet();
                     gameBoard.isWaiting = true; // Đối thủ được quyền chơi trước
