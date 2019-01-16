@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
                 // Kiểm tra có lưu không
                 String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
                 if (!savedString.equals("")) {
-                    if (isContinueRequesting) return;
+                    //if (isContinueRequesting) return;
 
                     b.setTitle("Xác nhận");
                     b.setMessage("Bạn có muốn yêu cầu chơi tiếp không?");
@@ -180,6 +180,9 @@ public class MainActivity extends Activity {
 
                         //Xóa nước cờ đã lưu
                         SingletonSharePrefs.getInstance().clear();
+
+                        //Gửi thông báo xóa nước cờ đã lưu
+                        connectedBluetooth.sendData("C@O@N@T@I@N@U@E@C@A@N@C@L@E".getBytes());
 
                         b.setMessage("Bạn là người chơi trước.");
 
@@ -216,7 +219,16 @@ public class MainActivity extends Activity {
 
             else if (message.length() >= 16 && message.substring(0, 16).equals("C@O@N@T@I@N@U@E@")) {
 
-                if (message.equals("C@O@N@T@I@N@U@E@C@L@I@E@N@T")) {
+                if (message.equals("C@O@N@T@I@N@U@E@C@A@N@C@L@E"))
+                {
+                    //Xóa nước cờ đã lưu ở client
+                    SingletonSharePrefs.getInstance().clear();
+                }
+
+                else if (message.equals("C@O@N@T@I@N@U@E@C@L@I@E@N@T")) {
+
+                    isContinueRequesting =true;
+
                     AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
                     b.setTitle("Đối thủ muốn chơi tiếp!");
                     b.setMessage("Nhấn OK để đồng ý.\nNhấn Cancel để từ chối.");
@@ -244,6 +256,12 @@ public class MainActivity extends Activity {
                         connectedBluetooth.sendData("C@O@N@T@I@N@U@E@S@U@C@C@E@E@D@".getBytes());
 
                         String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+
+                        if (GameBoard.listMoves.length() != 0){
+                            GameBoard.listMoves.setLength(0);
+                        }
+                        GameBoard.listMoves.append(savedString);
+
                         StringTokenizer st = new StringTokenizer(savedString, ",");
                         int count = st.countTokens();
                         for (int i = 0; i < count; i++) {
@@ -290,11 +308,18 @@ public class MainActivity extends Activity {
                     }).show();
                     isContinueRequesting = false;
                 }
+
                 else if (message.equals("C@O@N@T@I@N@U@E@S@U@C@C@E@E@D@")) {
                     AlertDialog.Builder b = new AlertDialog.Builder(imgExit.getContext());
                     b.setTitle("Đối thủ đã đồng ý chơi tiếp!");
 
                     String savedString = SingletonSharePrefs.getInstance().get(GameBoard.MACUser2, String.class);
+
+                    if (GameBoard.listMoves.length() != 0){
+                        GameBoard.listMoves.setLength(0);
+                    }
+                    GameBoard.listMoves.append(savedString);
+
                     if (!savedString.equals("")) {
                         StringTokenizer st = new StringTokenizer(savedString, ",");
                         int count = st.countTokens();

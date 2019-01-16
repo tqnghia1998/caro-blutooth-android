@@ -56,9 +56,10 @@ public class SingletonSharePrefs {
 
     public void clear() {
 
+        GameBoard.listMoves.setLength(0);
        SharedPreferences.Editor editor = mSharedPreferences.edit();
        editor.remove(GameBoard.MACUser2);
        editor.remove("isWaiting");
-       editor.commit();
+       editor.apply();
     }
 }
