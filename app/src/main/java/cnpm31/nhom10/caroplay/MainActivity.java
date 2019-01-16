@@ -131,9 +131,7 @@ public class MainActivity extends Activity {
 
                 // Nếu mình là chủ phòng, và đã nhận tên của đối phương, thì bắt đầu gửi ảnh
                 if (message.length() > 16 && message.substring(8, 16).equals("B@O@T@H@")) {
-                    nameUser2.setText(message.substring(33));
-
-                    GameBoard.MACUser2 = message.substring(16,33);
+                    nameUser2.setText(message.substring(16));
 
                     try {
                         connectedBluetooth.sendFile(
@@ -151,10 +149,8 @@ public class MainActivity extends Activity {
                 else {
                     nameUser2.setText(message.substring(8));
 
-                    String MACClient = android.provider.Settings.Secure.getString(mainContext.getContentResolver(), "bluetooth_address");
-
-                    // Gửi lại tên và MAC cho chủ phòng
-                    connectedBluetooth.sendData(("N@A@M@E@B@O@T@H@" + MACClient + nameUser1.getText().toString()).getBytes());
+                    // Gửi lại tên cho chủ phòng
+                    connectedBluetooth.sendData(("N@A@M@E@B@O@T@H@" + nameUser1.getText().toString()).getBytes());
                 }
             }
             // endregion

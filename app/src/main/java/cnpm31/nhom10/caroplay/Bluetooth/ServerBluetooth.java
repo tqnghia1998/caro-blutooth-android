@@ -8,6 +8,7 @@ import android.util.Log;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import cnpm31.nhom10.caroplay.GameBoard.GameBoard;
 import cnpm31.nhom10.caroplay.MainActivity;
 import cnpm31.nhom10.caroplay.R;
 
@@ -57,6 +58,9 @@ public class ServerBluetooth extends Thread {
             if (serverSocket != null) {
 
                 Log.e(MainActivity.TAG, "Kết nối đến client thành công.");
+
+                //Lấy MAC client
+                GameBoard.MACUser2 = serverSocket.getRemoteDevice().getAddress();
 
                 /* Quản lý kết nối */
                 MainActivity.connectedBluetooth = new ConnectedBluetooth(serverSocket);
